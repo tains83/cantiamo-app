@@ -23,7 +23,8 @@ import {
   Bold, Italic, AlignCenter, ChevronLeft, 
   Loader2, PlusCircle, MinusCircle, Edit3, Settings, Check, Save, AlertCircle,
   ChevronUp, ChevronDown, Move, Youtube, FileText, ExternalLink, RefreshCw
-} from 'lucide-react';
+} from 'lucide-react'
+import './index.css';
 
 // --- CONFIGURAZIONE FIREBASE ---
 const firebaseConfig = JSON.parse(__firebase_config);
