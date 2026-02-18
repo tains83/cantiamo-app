@@ -36,7 +36,7 @@ const ADMIN_PASSWORD = "SanRocco";
 const CATEGORIES = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Mariano", "Spirito Santo", "Altro"];
 
 // Percorso aggiornato dell'icona richiesta
-const LOGO_SRC = "icon.jpeg";
+const LOGO_SRC = "/icon.jpeg";
 
 export default function App() {
   const [user, setUser] = useState(null);
