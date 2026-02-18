@@ -27,10 +27,22 @@ import {
 import './index.css';
 
 // --- CONFIGURAZIONE FIREBASE ---
+// Recupera la variabile (Assicurati che inizi con VITE_)
 const rawConfig = import.meta.env.VITE_FIREBASE_CONFIG;
+
+// Debug: questo ti dirà nella console del browser se la variabile esiste
+console.log("Firebase Config Raw:", rawConfig);
+
 const firebaseConfig = typeof rawConfig === 'string' 
     ? JSON.parse(rawConfig) 
     : rawConfig;
+
+// Inizializza solo se l'oggetto ha dei dati
+if (!firebaseConfig || !firebaseConfig.apiKey) {
+    console.error("ERRORE: Le chiavi Firebase sono mancanti! Controlla Vercel.");
+} else {
+    initializeApp(firebaseConfig);
+}
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
