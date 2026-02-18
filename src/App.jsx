@@ -27,7 +27,7 @@ import {
 import './index.css';
 
 // --- CONFIGURAZIONE FIREBASE ---
-/ Controlla se è già un oggetto o se deve essere convertito da stringa
+// Controlla se è già un oggetto o se deve essere convertito da stringa
 const firebaseConfig = typeof __firebase_config === 'string' 
     ? JSON.parse(__firebase_config) 
     : __firebase_config;
