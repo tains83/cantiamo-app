@@ -27,7 +27,13 @@ import {
 import './index.css';
 
 // --- CONFIGURAZIONE FIREBASE ---
-const firebaseConfig = JSON.parse(__firebase_config);
+/ Controlla se è già un oggetto o se deve essere convertito da stringa
+const firebaseConfig = typeof __firebase_config === 'string' 
+    ? JSON.parse(__firebase_config) 
+    : __firebase_config;
+
+// Ora puoi inizializzare Firebase in sicurezza
+initializeApp(firebaseConfig);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
