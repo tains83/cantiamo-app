@@ -239,7 +239,25 @@ export default function App() {
     (s.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.category || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+// --- FUNZIONE DI NAVIGAZIONE (PUNTO 2) ---
+  const navigatePlaylist = (direction) => {
+    // Se non abbiamo una playlist aperta o un canto selezionato, non fare nulla
+    if (!selectedPlaylistView || !selectedSong) return;
+    
+    // Troviamo la posizione del canto attuale nella lista degli ID della playlist
+    const currentIndex = selectedPlaylistView.songIds.indexOf(selectedSong.id);
+    const nextIndex = currentIndex + direction;
+    
+    // Controlliamo di non uscire dai limiti (es: non andare oltre l'ultimo o prima del primo)
+    if (nextIndex >= 0 && nextIndex < selectedPlaylistView.songIds.length) {
+      const nextSongId = selectedPlaylistView.songIds[nextIndex];
+      // Cerchiamo i dati del prossimo canto nell'archivio generale
+      const nextSong = songs.find(s => s.id === nextSongId);
+      if (nextSong) {
+        setSelectedSong(nextSong);
+      }
+    }
+  };
   if (authStatus === 'loading') {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-white text-center">
@@ -450,7 +468,35 @@ export default function App() {
           </div>
 
           <div className="flex-1 p-8 text-center overflow-y-auto bg-white">
-            <div className="font-serif leading-relaxed max-w-md mx-auto whitespace-pre-wrap pb-24" style={{ fontSize: `${viewerFontSize}px` }} dangerouslySetInnerHTML={{ __html: selectedSong.text }} />
+            <div className="font-serif leading-relaxed max-w-md mx-auto whitespace-pre-wrap pb-24" style={{ fontSize: `${viewerFontSize}px` }} 
+{/* Barra di navigazione interna alla playlist */}
+{selectedPlaylistView && selectedPlaylistView.songIds.includes(selectedSong.id) && (
+  <div className="flex justify-between items-center px-6 py-3 bg-slate-50 border-b sticky top-0 z-20">
+    <button 
+      onClick={() => navigatePlaylist(-1)}
+      disabled={selectedPlaylistView.songIds.indexOf(selectedSong.id) === 0}
+      className="flex items-center gap-1 text-[10px] font-black uppercase text-indigo-600 disabled:opacity-20"
+    >
+      <ChevronLeft size={18}/> Precedente
+    </button>
+    
+    <div className="flex flex-col items-center">
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Scaletta</span>
+        <span className="text-xs font-bold text-indigo-600">
+          {selectedPlaylistView.songIds.indexOf(selectedSong.id) + 1} / {selectedPlaylistView.songIds.length}
+        </span>
+    </div>
+
+    <button 
+      onClick={() => navigatePlaylist(1)}
+      disabled={selectedPlaylistView.songIds.indexOf(selectedSong.id) === selectedPlaylistView.songIds.length - 1}
+      className="flex items-center gap-1 text-[10px] font-black uppercase text-indigo-600 disabled:opacity-20"
+    >
+      Successivo <ChevronRight size={18}/>
+    </button>
+  </div>
+)}          
+dangerouslySetInnerHTML={{ __html: selectedSong.text }} />
             <div className="max-w-xs mx-auto pb-10">
               <button onClick={() => toggleFav(selectedSong.id)} className={`w-full p-5 rounded-3xl flex items-center justify-center gap-3 font-black uppercase text-[10px] transition-all shadow-sm ${favorites.includes(selectedSong.id) ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
                  <Heart size={18} fill={favorites.includes(selectedSong.id) ? "#f43f5e" : "none"} />
@@ -529,11 +575,20 @@ export default function App() {
             {selectedPlaylistView.songIds?.map((sid, idx) => {
               const s = songs.find(x => x.id === sid);
               if (!s) return null;
-              return (
-                <div key={sid} onClick={() => setSelectedSong(s)} className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center">
-                  <span className="font-black text-slate-800 uppercase text-xs">{idx + 1}. {s.title}</span>
-                  <ChevronRight size={16} className="text-slate-300"/>
-                </div>
+             return (
+  <div 
+    key={sid} 
+    onClick={() => {
+      setSelectedSong(s);
+      // Non dobbiamo fare altro, setSelectedPlaylistView è già impostato!
+    }} 
+    className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center active:bg-indigo-50"
+  >
+    <span className="font-black text-slate-800 uppercase text-xs">
+      {idx + 1}. {s.title}
+    </span>
+    <ChevronRight size={16} className="text-slate-300"/>
+  </div>
               );
             })}
           </div>
