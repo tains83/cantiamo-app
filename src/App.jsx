@@ -458,6 +458,7 @@ export default function App() {
             </div>
           </div>
           
+        {/* --- INIZIO BLOCCO DA SOSTITUIRE --- */}
           <div className="flex justify-center gap-4 py-3 bg-slate-50 border-b">
               <button onClick={() => setViewerFontSize(f => Math.max(12, f-2))} className="p-2 text-slate-400 hover:text-indigo-600 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                 <MinusCircle size={20}/> Rimpicciolisci
@@ -467,36 +468,41 @@ export default function App() {
               </button>
           </div>
 
-          <div className="flex-1 p-8 text-center overflow-y-auto bg-white">
-            <div className="font-serif leading-relaxed max-w-md mx-auto whitespace-pre-wrap pb-24" style={{ fontSize: `${viewerFontSize}px` }} 
-{/* Barra di navigazione interna alla playlist */}
-{selectedPlaylistView && selectedPlaylistView.songIds.includes(selectedSong.id) && (
-  <div className="flex justify-between items-center px-6 py-3 bg-slate-50 border-b sticky top-0 z-20">
-    <button 
-      onClick={() => navigatePlaylist(-1)}
-      disabled={selectedPlaylistView.songIds.indexOf(selectedSong.id) === 0}
-      className="flex items-center gap-1 text-[10px] font-black uppercase text-indigo-600 disabled:opacity-20"
-    >
-      <ChevronLeft size={18}/> Precedente
-    </button>
-    
-    <div className="flex flex-col items-center">
-        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Scaletta</span>
-        <span className="text-xs font-bold text-indigo-600">
-          {selectedPlaylistView.songIds.indexOf(selectedSong.id) + 1} / {selectedPlaylistView.songIds.length}
-        </span>
-    </div>
+          {/* Barra di navigazione per le Liste/Playlist */}
+          {selectedPlaylistView && selectedPlaylistView.songIds.includes(selectedSong.id) && (
+            <div className="flex justify-between items-center px-6 py-3 bg-indigo-50 border-b sticky top-0 z-20">
+              <button 
+                onClick={() => navigatePlaylist(-1)}
+                disabled={selectedPlaylistView.songIds.indexOf(selectedSong.id) === 0}
+                className="flex items-center gap-1 text-[10px] font-black uppercase text-indigo-600 disabled:opacity-20"
+              >
+                <ChevronLeft size={18}/> Precedente
+              </button>
+              
+              <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Scaletta</span>
+                  <span className="text-xs font-bold text-indigo-600">
+                    {selectedPlaylistView.songIds.indexOf(selectedSong.id) + 1} / {selectedPlaylistView.songIds.length}
+                  </span>
+              </div>
 
-    <button 
-      onClick={() => navigatePlaylist(1)}
-      disabled={selectedPlaylistView.songIds.indexOf(selectedSong.id) === selectedPlaylistView.songIds.length - 1}
-      className="flex items-center gap-1 text-[10px] font-black uppercase text-indigo-600 disabled:opacity-20"
-    >
-      Successivo <ChevronRight size={18}/>
-    </button>
-  </div>
-)}          
-dangerouslySetInnerHTML={{ __html: selectedSong.text }} />
+              <button 
+                onClick={() => navigatePlaylist(1)}
+                disabled={selectedPlaylistView.songIds.indexOf(selectedSong.id) === selectedPlaylistView.songIds.length - 1}
+                className="flex items-center gap-1 text-[10px] font-black uppercase text-indigo-600 disabled:opacity-20"
+              >
+                Successivo <ChevronRight size={18}/>
+              </button>
+            </div>
+          )}
+
+          <div className="flex-1 p-8 text-center overflow-y-auto bg-white">
+            <div 
+              className="font-serif leading-relaxed max-w-md mx-auto whitespace-pre-wrap pb-24" 
+              style={{ fontSize: `${viewerFontSize}px` }}
+              dangerouslySetInnerHTML={{ __html: selectedSong.text }} 
+            />
+            
             <div className="max-w-xs mx-auto pb-10">
               <button onClick={() => toggleFav(selectedSong.id)} className={`w-full p-5 rounded-3xl flex items-center justify-center gap-3 font-black uppercase text-[10px] transition-all shadow-sm ${favorites.includes(selectedSong.id) ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
                  <Heart size={18} fill={favorites.includes(selectedSong.id) ? "#f43f5e" : "none"} />
@@ -504,36 +510,7 @@ dangerouslySetInnerHTML={{ __html: selectedSong.text }} />
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-white flex flex-col p-6 animate-in slide-in-from-bottom duration-300">
-          <div className="flex justify-between items-center mb-6">
-            <button onClick={() => setIsEditModalOpen(false)} className="p-2"><X/></button>
-            <span className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Editor Canti</span>
-            <button onClick={handleSaveSong} className="bg-emerald-600 text-white px-6 py-2.5 rounded-full font-black text-xs uppercase shadow-lg flex items-center gap-2">
-              <Save size={16}/> Salva Canto
-            </button>
-          </div>
-          <div className="space-y-3 overflow-y-auto pb-6">
-            <input value={newSongTitle} onChange={e => setNewSongTitle(e.target.value)} placeholder="Titolo del canto..." className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold outline-none" />
-            <select value={newSongCategory} onChange={e => setNewSongCategory(e.target.value)} className="w-full p-4 bg-indigo-50 text-indigo-700 rounded-2xl border-none font-black uppercase text-xs outline-none">
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <div className="grid grid-cols-2 gap-3">
-              <input value={newYoutubeUrl} onChange={e => setNewYoutubeUrl(e.target.value)} placeholder="YouTube link..." className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs outline-none" />
-              <input value={newSheetMusicUrl} onChange={e => setNewSheetMusicUrl(e.target.value)} placeholder="Spartito link..." className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs outline-none" />
-            </div>
-            <div className="mt-4 flex gap-2 p-1 bg-slate-100 rounded-xl">
-              <button onMouseDown={e => {e.preventDefault(); execCommand('bold')}} className="flex-1 py-3 bg-white rounded-lg shadow-sm font-bold flex justify-center"><Bold size={18}/></button>
-              <button onMouseDown={e => {e.preventDefault(); execCommand('italic')}} className="flex-1 py-3 bg-white rounded-lg shadow-sm italic flex justify-center"><Italic size={18}/></button>
-              <button onMouseDown={e => {e.preventDefault(); execCommand('justifyCenter')}} className="flex-1 py-3 bg-white rounded-lg shadow-sm flex justify-center"><AlignCenter size={18}/></button>
-            </div>
-            <div ref={editorRef} contentEditable className="min-h-[300px] bg-white border border-slate-100 p-6 rounded-2xl outline-none font-serif text-center shadow-inner text-xl overflow-y-auto" />
-          </div>
-        </div>
-      )}
+        )}
 
       {isPlaylistModalOpen && (
         <div className="fixed inset-0 z-[300] bg-white flex flex-col p-6 overflow-hidden animate-in slide-in-from-bottom">
