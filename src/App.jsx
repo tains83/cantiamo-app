@@ -435,7 +435,7 @@ export default function App() {
         </div>
       )}
 
-{/* --- INIZIO VISUALIZZATORE CANTO --- */}
+{/* --- BLOCCO VISUALIZZATORE CANTO COMPLETAMENTE CORRETTO --- */}
       {selectedSong && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in slide-in-from-right duration-300">
           <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10 shadow-sm">
@@ -511,7 +511,6 @@ export default function App() {
           </div>
         </div>
       )}
-      {/* --- FINE VISUALIZZATORE CANTO --- */}
       
       {isPlaylistModalOpen && (
         <div className="fixed inset-0 z-[300] bg-white flex flex-col p-6 overflow-hidden animate-in slide-in-from-bottom">
