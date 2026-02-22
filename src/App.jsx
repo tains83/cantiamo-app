@@ -61,6 +61,28 @@ export default function App() {
   const [favorites, setFavorites] = useState(() => {
     try {
       const saved = localStorage.getItem('cs_favs_v4');
+      // --- FUNZIONE DI NAVIGAZIONE TRA I CANTI ---
+  const navigatePlaylist = (direction) => {
+    // 1. Controlliamo di avere una lista attiva e un canto aperto
+    if (!selectedPlaylistView || !selectedSong) return;
+    
+    // 2. Troviamo la posizione (indice) del canto attuale nella lista
+    const currentIndex = selectedPlaylistView.songIds.indexOf(selectedSong.id);
+    const nextIndex = currentIndex + direction;
+    
+    // 3. Verifichiamo di non andare oltre l'inizio o la fine della lista
+    if (nextIndex >= 0 && nextIndex < selectedPlaylistView.songIds.length) {
+      const nextSongId = selectedPlaylistView.songIds[nextIndex];
+      
+      // 4. Cerchiamo il nuovo canto nell'elenco totale dei canti
+      const nextSong = songs.find(s => s.id === nextSongId);
+      
+      // 5. Aggiorniamo lo stato: l'app mostrerà automaticamente il nuovo testo
+      if (nextSong) {
+        setSelectedSong(nextSong);
+      }
+    }
+  };
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
