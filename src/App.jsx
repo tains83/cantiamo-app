@@ -437,6 +437,7 @@ export default function App() {
 
       {selectedSong && (
         <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in slide-in-from-right duration-300">
+          {/* Header del Canto */}
           <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10 shadow-sm">
             <button onClick={() => setSelectedSong(null)} className="p-2 text-slate-800"><ChevronLeft size={32}/></button>
             <div className="text-center flex-1 overflow-hidden px-2">
@@ -458,7 +459,7 @@ export default function App() {
             </div>
           </div>
           
-        {/* --- INIZIO BLOCCO DA SOSTITUIRE --- */}
+          {/* Controlli Zoom */}
           <div className="flex justify-center gap-4 py-3 bg-slate-50 border-b">
               <button onClick={() => setViewerFontSize(f => Math.max(12, f-2))} className="p-2 text-slate-400 hover:text-indigo-600 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                 <MinusCircle size={20}/> Rimpicciolisci
@@ -468,8 +469,8 @@ export default function App() {
               </button>
           </div>
 
-          {/* Barra di navigazione per le Liste/Playlist */}
-          {selectedPlaylistView && selectedPlaylistView.songIds.includes(selectedSong.id) && (
+          {/* Navigazione Playlist (COLLEGAMENTO REALE) */}
+          {selectedPlaylistView && selectedPlaylistView.songIds?.includes(selectedSong.id) && (
             <div className="flex justify-between items-center px-6 py-3 bg-indigo-50 border-b sticky top-0 z-20">
               <button 
                 onClick={() => navigatePlaylist(-1)}
@@ -496,13 +497,13 @@ export default function App() {
             </div>
           )}
 
+          {/* Testo del Canto */}
           <div className="flex-1 p-8 text-center overflow-y-auto bg-white">
             <div 
               className="font-serif leading-relaxed max-w-md mx-auto whitespace-pre-wrap pb-24" 
-              style={{ fontSize: `${viewerFontSize}px` }}
+              style={{ fontSize: `${viewerFontSize}px` }} 
               dangerouslySetInnerHTML={{ __html: selectedSong.text }} 
             />
-            
             <div className="max-w-xs mx-auto pb-10">
               <button onClick={() => toggleFav(selectedSong.id)} className={`w-full p-5 rounded-3xl flex items-center justify-center gap-3 font-black uppercase text-[10px] transition-all shadow-sm ${favorites.includes(selectedSong.id) ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
                  <Heart size={18} fill={favorites.includes(selectedSong.id) ? "#f43f5e" : "none"} />
@@ -510,8 +511,8 @@ export default function App() {
               </button>
             </div>
           </div>
-        )}
-
+        </div>
+      )}
       {isPlaylistModalOpen && (
         <div className="fixed inset-0 z-[300] bg-white flex flex-col p-6 overflow-hidden animate-in slide-in-from-bottom">
           <div className="flex justify-between items-center mb-6">
