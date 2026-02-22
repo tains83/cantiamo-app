@@ -68,12 +68,10 @@ export default function App() {
   const [selectedSongsInPlaylist, setSelectedSongsInPlaylist] = useState([]);
   const [selectedPlaylistView, setSelectedPlaylistView] = useState(null);
 
-  // --- LOGICA NAVIGAZIONE PLAYLIST ---
   const navigatePlaylist = (direction) => {
     if (!selectedPlaylistView || !selectedSong) return;
     const currentIndex = selectedPlaylistView.songIds.indexOf(selectedSong.id);
     const nextIndex = currentIndex + direction;
-    
     if (nextIndex >= 0 && nextIndex < selectedPlaylistView.songIds.length) {
       const nextSongId = selectedPlaylistView.songIds[nextIndex];
       const nextSong = songs.find(s => s.id === nextSongId);
@@ -200,4 +198,95 @@ export default function App() {
               {isAdmin && <button onClick={() => openSongEditor()} className="text-emerald-600 text-[10px] font-black uppercase flex items-center gap-1"><PlusCircle size={14}/> Nuovo</button>}
             </div>
             {filteredSongs.map(song => (
-              <div key={song.id} onClick={() => setSelectedSong(song)} className="bg-white p-4 rounded-2xl flex
+              <div key={song.id} onClick={() => setSelectedSong(song)} className="bg-white p-4 rounded-2xl flex justify-between items-center border border-slate-100 shadow-sm cursor-pointer active:scale-95 transition-transform">
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-800">{song.title}</h3>
+                  <span className="text-[9px] font-black uppercase text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md">{song.category}</span>
+                </div>
+                <ChevronRight className="text-slate-300" size={20} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'playlists' && (
+          <div className="space-y-4">
+            <h2 className="text-[10px] font-black uppercase text-slate-400 px-2">Celebrazioni</h2>
+            {playlists.map(pl => (
+              <div key={pl.id} onClick={() => setSelectedPlaylistView(pl)} className="bg-white p-5 rounded-3xl flex justify-between items-center border border-slate-100 shadow-sm">
+                <h3 className="font-bold text-slate-800">{pl.title}</h3>
+                <ChevronRight className="text-slate-300" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'favorites' && (
+          <div className="space-y-3">
+             <h2 className="text-[10px] font-black uppercase text-slate-400 px-2">Preferiti</h2>
+             {songs.filter(s => favorites.includes(s.id)).map(song => (
+              <div key={song.id} onClick={() => setSelectedSong(song)} className="bg-white p-4 rounded-2xl flex justify-between items-center border border-rose-100 shadow-sm">
+                <h3 className="font-bold text-slate-800">{song.title}</h3>
+                <Heart size={18} fill="#f43f5e" className="text-rose-500" />
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <nav className="fixed bottom-0 w-full max-w-lg bg-white/90 backdrop-blur-xl border-t flex justify-around p-4 pb-8 z-50">
+        {[
+          { id: 'home', icon: Music, label: 'Canti' },
+          { id: 'playlists', icon: ListMusic, label: 'Liste' },
+          { id: 'favorites', icon: Heart, label: 'Preferiti' }
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 ${activeTab === t.id ? 'text-indigo-600' : 'text-slate-400'}`}>
+            <t.icon size={22} />
+            <span className="text-[9px] font-black uppercase">{t.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* VISUALIZZATORE CANTO */}
+      {selectedSong && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in">
+          <div className="p-4 border-b flex justify-between items-center bg-white">
+            <button onClick={() => setSelectedSong(null)} className="p-2"><ChevronLeft size={32}/></button>
+            <div className="text-center">
+              <h2 className="font-black uppercase text-xs">{selectedSong.title}</h2>
+            </div>
+            <div className="w-10"></div>
+          </div>
+          <div className="flex-1 p-8 text-center overflow-y-auto">
+            <div className="font-serif leading-relaxed" style={{ fontSize: `${viewerFontSize}px` }} dangerouslySetInnerHTML={{ __html: selectedSong.text }} />
+          </div>
+          {selectedPlaylistView && (
+            <div className="p-6 bg-indigo-50 flex justify-between items-center border-t">
+              <button onClick={() => navigatePlaylist(-1)} className="text-indigo-600 font-bold uppercase text-[10px]">Precedente</button>
+              <button onClick={() => navigatePlaylist(1)} className="text-indigo-600 font-bold uppercase text-[10px]">Successivo</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODALE LOGIN ADMIN */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-6">
+          <div className="bg-white p-8 rounded-[40px] w-full max-w-xs text-center">
+            <input 
+              type="password" placeholder="Passcode" 
+              className="w-full p-4 bg-slate-100 rounded-2xl mb-4 text-center font-bold" 
+              onKeyDown={e => { if(e.key === 'Enter' && e.target.value === ADMIN_PASSWORD) { setIsAdmin(true); setShowLoginModal(false); } }} 
+            />
+            <button onClick={() => setShowLoginModal(false)} className="text-[10px] font-black text-slate-300 uppercase">Chiudi</button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .animate-in { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+      `}</style>
+    </div>
+  );
+}
