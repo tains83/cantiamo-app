@@ -57,8 +57,6 @@ export default function App() {
   const [editingId, setEditingId] = useState(null);
   const [newSongTitle, setNewSongTitle] = useState('');
   const [newSongCategory, setNewSongCategory] = useState('Ingresso');
-  const [newYoutubeUrl, setNewYoutubeUrl] = useState('');
-  const [newSheetMusicUrl, setNewSheetMusicUrl] = useState('');
   const editorRef = useRef(null);
 
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
@@ -67,6 +65,7 @@ export default function App() {
   const [selectedSongsInPlaylist, setSelectedSongsInPlaylist] = useState([]);
   const [selectedPlaylistView, setSelectedPlaylistView] = useState(null);
 
+  // --- FUNZIONI DI NAVIGAZIONE ---
   const navigatePlaylist = (direction) => {
     if (!selectedPlaylistView || !selectedSong) return;
     const currentIndex = selectedPlaylistView.songIds.indexOf(selectedSong.id);
@@ -76,6 +75,34 @@ export default function App() {
       const nextSong = songs.find(s => s.id === nextSongId);
       if (nextSong) setSelectedSong(nextSong);
     }
+  };
+
+  // --- GESTIONE ORDINE E VISIBILITÀ PLAYLIST ---
+  const movePlaylist = async (index, direction) => {
+    if (!isAdmin) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= playlists.length) return;
+
+    const currentPl = playlists[index];
+    const targetPl = playlists[targetIndex];
+
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'playlists', currentPl.id), { order: targetPl.order || 0 });
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'playlists', targetPl.id), { order: currentPl.order || 0 });
+  };
+
+  const moveSongInPlaylist = async (pl, songIndex, direction) => {
+    if (!isAdmin) return;
+    const newSongIds = [...pl.songIds];
+    const targetIndex = songIndex + direction;
+    if (targetIndex < 0 || targetIndex >= newSongIds.length) return;
+
+    [newSongIds[songIndex], newSongIds[targetIndex]] = [newSongIds[targetIndex], newSongIds[songIndex]];
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'playlists', pl.id), { songIds: newSongIds });
+  };
+
+  const togglePlaylistVisibility = async (pl) => {
+    if (!isAdmin) return;
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'playlists', pl.id), { hidden: !pl.hidden });
   };
 
   useEffect(() => {
@@ -107,32 +134,11 @@ export default function App() {
     setFavorites(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const openSongEditor = (song = null) => {
-    if (song) {
-      setEditingId(song.id);
-      setNewSongTitle(song.title);
-      setNewSongCategory(song.category);
-      setNewYoutubeUrl(song.youtubeUrl || '');
-      setNewSheetMusicUrl(song.sheetMusicUrl || '');
-      setIsEditModalOpen(true);
-      setTimeout(() => { if(editorRef.current) editorRef.current.innerHTML = song.text || ""}, 100);
-    } else {
-      setEditingId(null);
-      setNewSongTitle('');
-      setNewSongCategory('Ingresso');
-      setNewYoutubeUrl('');
-      setNewSheetMusicUrl('');
-      setIsEditModalOpen(true);
-      setTimeout(() => { if(editorRef.current) editorRef.current.innerHTML = ""}, 100);
-    }
-  };
-
   const handleSaveSong = async () => {
     if (!isAdmin || !newSongTitle.trim()) return;
     const songData = { 
       title: newSongTitle, category: newSongCategory, 
       text: editorRef.current?.innerHTML || "", 
-      youtubeUrl: newYoutubeUrl, sheetMusicUrl: newSheetMusicUrl,
       updatedAt: serverTimestamp() 
     };
     try {
@@ -142,24 +148,17 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
-  const handleDeleteSong = async (id) => {
-    if (!isAdmin || !window.confirm("Eliminare definitivamente questo canto?")) return;
-    try {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'songs', id));
-      setSelectedSong(null);
-    } catch (err) { console.error(err); }
-  };
-
   const handleSavePlaylist = async () => {
     if (!isAdmin || !newPlaylistTitle.trim()) return;
     const plData = { 
-      title: newPlaylistTitle, songIds: selectedSongsInPlaylist, 
+      title: newPlaylistTitle, 
+      songIds: selectedSongsInPlaylist, 
       updatedAt: serverTimestamp(),
       order: editingPlaylistId ? (playlists.find(p => p.id === editingPlaylistId)?.order || 0) : playlists.length
     };
     try {
       if (editingPlaylistId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'playlists', editingPlaylistId), plData);
-      else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'playlists'), { ...plData, createdAt: serverTimestamp() });
+      else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'playlists'), { ...plData, createdAt: serverTimestamp(), hidden: false });
       setIsPlaylistModalOpen(false);
     } catch (err) { console.error(err); }
   };
@@ -202,7 +201,7 @@ export default function App() {
           <div className="space-y-3">
             <div className="flex justify-between items-center px-2">
               <h2 className="text-[10px] font-black uppercase text-slate-400">Archivio Canti</h2>
-              {isAdmin && <button onClick={() => openSongEditor()} className="text-emerald-600 text-[10px] font-black uppercase flex items-center gap-1"><PlusCircle size={14}/> Nuovo</button>}
+              {isAdmin && <button onClick={() => {setEditingId(null); setNewSongTitle(''); setIsEditModalOpen(true);}} className="text-emerald-600 text-[10px] font-black uppercase flex items-center gap-1"><PlusCircle size={14}/> Nuovo</button>}
             </div>
             {filteredSongs.map(song => (
               <div key={song.id} onClick={() => setSelectedSong(song)} className="bg-white p-4 rounded-2xl flex justify-between items-center border border-slate-100 shadow-sm cursor-pointer active:scale-95 transition-transform">
@@ -222,12 +221,35 @@ export default function App() {
               <h2 className="text-[10px] font-black uppercase text-slate-400">Celebrazioni</h2>
               {isAdmin && <button onClick={() => { setEditingPlaylistId(null); setNewPlaylistTitle(''); setSelectedSongsInPlaylist([]); setIsPlaylistModalOpen(true); }} className="text-indigo-600 text-[10px] font-black uppercase flex items-center gap-1"><PlusCircle size={14}/> Nuova</button>}
             </div>
-            {playlists.map(pl => (
-              <div key={pl.id} onClick={() => setSelectedPlaylistView(pl)} className="bg-white p-5 rounded-3xl flex justify-between items-center border border-slate-100 shadow-sm cursor-pointer">
-                <div>
-                  <h3 className="font-bold text-slate-800">{pl.title}</h3>
+            {playlists
+              .filter(pl => isAdmin || !pl.hidden)
+              .map((pl, idx) => (
+              <div key={pl.id} className={`bg-white p-4 rounded-3xl border flex items-center gap-3 shadow-sm ${pl.hidden ? 'opacity-50 grayscale border-dashed border-slate-300' : 'border-slate-100'}`}>
+                {isAdmin && (
+                  <div className="flex flex-col gap-1">
+                    <button onClick={() => movePlaylist(idx, -1)} className="text-slate-300"><ChevronUp size={16}/></button>
+                    <button onClick={() => movePlaylist(idx, 1)} className="text-slate-300"><ChevronDown size={16}/></button>
+                  </div>
+                )}
+                <div className="flex-1 cursor-pointer" onClick={() => setSelectedPlaylistView(pl)}>
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    {pl.title} {pl.hidden && <Settings size={12} className="text-slate-400"/>}
+                  </h3>
                   <p className="text-[9px] text-slate-400 font-bold uppercase">{pl.songIds?.length || 0} canti</p>
                 </div>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <button onClick={() => togglePlaylistVisibility(pl)} className="text-slate-400">
+                      {pl.hidden ? <RefreshCw size={18}/> : <X size={18}/>}
+                    </button>
+                    <button onClick={() => { 
+                      setEditingPlaylistId(pl.id); 
+                      setNewPlaylistTitle(pl.title); 
+                      setSelectedSongsInPlaylist(pl.songIds || []); 
+                      setIsPlaylistModalOpen(true); 
+                    }} className="text-emerald-600"><Edit3 size={18}/></button>
+                  </div>
+                )}
                 <ChevronRight className="text-slate-300" />
               </div>
             ))}
@@ -262,7 +284,7 @@ export default function App() {
 
       {/* VISUALIZZATORE CANTO */}
       {selectedSong && (
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in">
+        <div className="fixed inset-0 z-[300] bg-white flex flex-col animate-in">
           <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0">
             <button onClick={() => setSelectedSong(null)} className="p-2 text-slate-800"><ChevronLeft size={32}/></button>
             <div className="text-center flex-1 truncate px-2">
@@ -270,8 +292,7 @@ export default function App() {
               <span className="text-[9px] text-indigo-500 font-black uppercase">{selectedSong.category}</span>
             </div>
             <div className="flex gap-1">
-               {isAdmin && <button onClick={() => handleDeleteSong(selectedSong.id)} className="p-2 text-rose-600"><Trash2 size={20}/></button>}
-               {isAdmin && <button onClick={() => { setSelectedSong(null); openSongEditor(selectedSong); }} className="p-2 text-emerald-600"><Edit3 size={20}/></button>}
+               {isAdmin && <button onClick={() => {if(window.confirm("Eliminare?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'songs', selectedSong.id))}} className="p-2 text-rose-600"><Trash2 size={20}/></button>}
             </div>
           </div>
           
@@ -304,9 +325,83 @@ export default function App() {
         </div>
       )}
 
-      {/* MODALE EDITOR CANTO (Solo Admin) */}
+      {/* MODALE EDITOR PLAYLIST (Aggiunta/Modifica canti) */}
+      {isPlaylistModalOpen && (
+        <div className="fixed inset-0 z-[400] bg-white flex flex-col p-6 animate-in">
+          <div className="flex justify-between items-center mb-6">
+            <button onClick={() => setIsPlaylistModalOpen(false)}><X/></button>
+            <h3 className="font-black uppercase text-xs">Gestione Celebrazione</h3>
+            <button onClick={handleSavePlaylist} className="bg-indigo-600 text-white px-6 py-2 rounded-full font-black text-xs uppercase">Salva</button>
+          </div>
+          <input value={newPlaylistTitle} onChange={e => setNewPlaylistTitle(e.target.value)} placeholder="Titolo Celebrazione (es. Domenica delle Palme)..." className="w-full p-4 bg-slate-50 rounded-2xl border font-bold outline-none mb-6" />
+          
+          <div className="flex-1 overflow-y-auto space-y-2">
+            <h4 className="text-[10px] font-black uppercase text-slate-400 px-2">Seleziona i canti</h4>
+            {songs.map(s => (
+              <button 
+                key={s.id} 
+                onClick={() => {
+                  setSelectedSongsInPlaylist(prev => 
+                    prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
+                  )
+                }}
+                className={`w-full p-4 rounded-2xl border flex justify-between items-center transition-all ${selectedSongsInPlaylist.includes(s.id) ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100'}`}
+              >
+                <div className="text-left">
+                  <p className="font-bold text-slate-800 text-sm">{s.title}</p>
+                  <p className="text-[9px] uppercase font-black text-slate-400">{s.category}</p>
+                </div>
+                {selectedSongsInPlaylist.includes(s.id) ? <Check className="text-indigo-600" size={18}/> : <Plus size={18} className="text-slate-300"/>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* DETTAGLIO PLAYLIST (VISUALIZZAZIONE LISTA) */}
+      {selectedPlaylistView && (
+        <div className="fixed inset-0 z-[200] bg-white flex flex-col animate-in">
+          <div className="p-6 bg-indigo-700 text-white flex items-center gap-4 shadow-lg sticky top-0">
+            <button onClick={() => setSelectedPlaylistView(null)}><ChevronLeft size={32}/></button>
+            <h2 className="text-xl font-black italic truncate flex-1">{selectedPlaylistView.title}</h2>
+          </div>
+          <div className="flex-1 p-6 space-y-3 overflow-y-auto pb-24">
+            {selectedPlaylistView.songIds?.map((sid, idx) => {
+              const s = songs.find(x => x.id === sid);
+              if (!s) return null;
+              return (
+                <div key={`${sid}-${idx}`} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                  {isAdmin && (
+                    <div className="flex flex-col gap-1 pr-2 border-r border-slate-50">
+                      <button onClick={() => moveSongInPlaylist(selectedPlaylistView, idx, -1)} className="text-slate-300"><ChevronUp size={16}/></button>
+                      <button onClick={() => moveSongInPlaylist(selectedPlaylistView, idx, 1)} className="text-slate-300"><ChevronDown size={16}/></button>
+                    </div>
+                  )}
+                  <div className="flex-1 cursor-pointer" onClick={() => setSelectedSong(s)}>
+                    <span className="font-black text-slate-800 uppercase text-xs">{idx + 1}. {s.title}</span>
+                  </div>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => {
+                        const newIds = selectedPlaylistView.songIds.filter((_, i) => i !== idx);
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'playlists', selectedPlaylistView.id), { songIds: newIds });
+                      }} 
+                      className="text-rose-400 p-2"
+                    >
+                      <Trash2 size={16}/>
+                    </button>
+                  )}
+                  <ChevronRight size={16} className="text-slate-200"/>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* MODALE EDITOR CANTO */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-white flex flex-col p-6 animate-in">
+        <div className="fixed inset-0 z-[500] bg-white flex flex-col p-6 animate-in">
           <div className="flex justify-between items-center mb-6">
             <button onClick={() => setIsEditModalOpen(false)}><X/></button>
             <h3 className="font-black uppercase text-xs">Editor Canto</h3>
@@ -317,17 +412,16 @@ export default function App() {
             <select value={newSongCategory} onChange={e => setNewSongCategory(e.target.value)} className="w-full p-4 bg-slate-50 rounded-2xl border font-bold outline-none">
               {["Ingresso", "Atto Penitenziale", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Pace", "Comunione", "Meditazione", "Finale"].map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <div ref={editorRef} contentEditable className="w-full min-h-[300px] p-4 bg-slate-50 rounded-2xl border outline-none font-serif whitespace-pre-wrap" placeholder="Testo del canto..." />
+            <div ref={editorRef} contentEditable className="w-full min-h-[300px] p-4 bg-slate-50 rounded-2xl border outline-none font-serif whitespace-pre-wrap" />
           </div>
         </div>
       )}
 
-      {/* MODALE LOGIN ADMIN */}
+      {/* LOGIN MODAL */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-6">
           <div className="bg-white p-8 rounded-[40px] w-full max-w-xs text-center">
             <Settings size={32} className="mx-auto mb-4 text-indigo-600" />
-            <h3 className="font-black uppercase text-xs mb-6 text-slate-400">Area Riservata</h3>
             <input 
               type="password" placeholder="Passcode" 
               className="w-full p-5 bg-slate-100 rounded-2xl mb-4 text-center font-black text-2xl outline-none" 
@@ -335,28 +429,6 @@ export default function App() {
               onKeyDown={e => { if(e.key === 'Enter' && e.target.value === ADMIN_PASSWORD) { setIsAdmin(true); setShowLoginModal(false); } }} 
             />
             <button onClick={() => setShowLoginModal(false)} className="text-[10px] font-black text-slate-300 uppercase">Annulla</button>
-          </div>
-        </div>
-      )}
-
-      {/* DETTAGLIO PLAYLIST */}
-      {selectedPlaylistView && (
-        <div className="fixed inset-0 z-[150] bg-white flex flex-col animate-in">
-          <div className="p-6 bg-indigo-700 text-white flex items-center gap-4 shadow-lg">
-            <button onClick={() => setSelectedPlaylistView(null)}><ChevronLeft size={32}/></button>
-            <h2 className="text-xl font-black italic truncate">{selectedPlaylistView.title}</h2>
-          </div>
-          <div className="flex-1 p-6 space-y-3 overflow-y-auto pb-24">
-            {selectedPlaylistView.songIds?.map((sid, idx) => {
-              const s = songs.find(x => x.id === sid);
-              if (!s) return null;
-              return (
-                <div key={sid} onClick={() => setSelectedSong(s)} className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center">
-                  <span className="font-black text-slate-800 uppercase text-xs truncate flex-1">{idx + 1}. {s.title}</span>
-                  <ChevronRight size={16} className="text-slate-300"/>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
